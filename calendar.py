@@ -1,124 +1,133 @@
-from datetime import datetime, timedelta, timezone
-import requests
-from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
 from dateutil import tz
-from ics import Calendar, Event
+import re
+import requests
 
-# Config básica
+# Config
 TZ_MADRID = tz.gettz("Europe/Madrid")
-TZ_UTC = tz.UTC
+TZ_UTC = tz.gettz("UTC")
 OUTFILE = "spain-eurobasket.ics"
 
-# Partidos de España (fase de grupos, horas península)
-games = [
-    # (fecha ISO, hora, rival, sede, etiqueta_local_visitante, id "clave")
-    ("2025-08-28", "14:00", "Georgia", "Spyros Kyprianou Arena, Limassol (Chipre)", "Fuera", "geo-esp"),
-    ("2025-08-30", "20:30", "Bosnia y Herzegovina", "Spyros Kyprianou Arena, Limassol (Chipre)", "Casa", "esp-bih"),
-    ("2025-08-31", "17:15", "Chipre", "Spyros Kyprianou Arena, Limassol (Chipre)", "Casa", "esp-cyp"),
-    ("2025-09-02", "20:30", "Italia", "Spyros Kyprianou Arena, Limassol (Chipre)", "Fuera", "ita-esp"),
-    ("2025-09-04", "20:30", "Grecia", "Spyros Kyprianou Arena, Limassol (Chipre)", "Casa", "esp-grc"),
+# Partidos (hora peninsular)
+GAMES = [
+    ("2025-08-28", "14:00", "Georgia", "Spyros Kyprianou Arena, Limassol (Chipre)", "away"),
+    ("2025-08-30", "20:30", "Bosnia y Herzegovina", "Spyros Kyprianou Arena, Limassol (Chipre)", "home"),
+    ("2025-08-31", "17:15", "Chipre", "Spyros Kyprianou Arena, Limassol (Chipre)", "home"),
+    ("2025-09-02", "20:30", "Italia", "Spyros Kyprianou Arena, Limassol (Chipre)", "away"),
+    ("2025-09-04", "20:30", "Grecia", "Spyros Kyprianou Arena, Limassol (Chipre)", "home"),
 ]
 
-def fetch_result(team_a, team_b):
-    """
-    Intenta encontrar un resultado final fiable para {España vs Rival}.
-    Fuente de apoyo: página de FIBA 'Games' y resumen en Olympics.com.
-    Si no hay resultado aún o la estructura cambia, devuelve None.
-    """
-    # 1) Olympics.com resumen (suele listar resultados una vez finalizados)
-    try:
-        url = "https://www.olympics.com/en/news/basketball-fiba-eurobasket-2025-full-schedule-all-results-standings-complete-list"
-        html = requests.get(url, timeout=15).text
-        soup = BeautifulSoup(html, "html.parser")
-        text = soup.get_text(" ", strip=True).lower()
-        # Búsqueda muy básica de marcador "spain X–Y rival" o parecido
-        # Nota: robustez mínima; si cambian el formato, no se rompe nada crítico.
-        for sep in [" ", "–", "-", "—"]:
-            patterns = [
-                f"spain {sep}", f"españa {sep}"
-            ]
-        # Heurística: no fiable para todos los idiomas; preferimos FIBA si hay.
-    except Exception:
-        pass
+# Alias sencillos para casar nombres con fuentes en inglés
+ALIAS = {
+    "Bosnia y Herzegovina": "Bosnia",
+    "Grecia": "Greece",
+    "Georgia": "Georgia",
+    "Chipre": "Cyprus",
+    "Italia": "Italy",
+}
 
-    # 2) FIBA Games page (puede requerir JS; si no carga, salimos)
+def fetch_result(rival_en: str):
+    """
+    Intenta sacar marcadores finales desde la página 'Games' de FIBA.
+    Si no encuentra o la página cambia, devuelve None y seguimos felices.
+    """
     try:
         url = "https://www.fiba.basketball/en/events/fiba-eurobasket-2025/games"
-        html = requests.get(url, timeout=15).text
-        soup = BeautifulSoup(html, "html.parser")
-        # Buscamos líneas con Spain y el rival, seguido de dígitos
-        txt = soup.get_text(" ", strip=True)
-        import re
-        # Captura patrones tipo "Spain 82-76 Italy" o "Georgia 70-77 Spain"
-        m = re.findall(r"(Spain|España)\s+(\d{2,3})\s*[-–]\s*(\d{2,3})\s+([A-Za-zÀ-ÿ]+)", txt)
-        # y también al revés
-        m += re.findall(r"([A-Za-zÀ-ÿ]+)\s+(\d{2,3})\s*[-–]\s*(\d{2,3})\s+(Spain|España)", txt)
-        # Normalizamos a "España X–Y Rival"
-        results = []
-        for g in m:
-            if g[0].lower() in ("spain", "españa"):
-                left_name, a, b, right_name = g[0], g[1], g[2], g[3]
-                team_left = "España"
-                team_right = right_name
-                score = f"{a}-{b}"
-            else:
-                left_name, a, b, right_name = g[0], g[1], g[2], g[3]
-                team_left = left_name
-                team_right = "España"
-                score = f"{a}-{b}"
-            results.append((team_left, score, team_right))
-        # Intentamos casar con el rival concreto
-        for tl, score, tr in results:
-            if "espa" in tl.lower() or "espa" in tr.lower():
-                if team_b.lower() in (tl.lower(), tr.lower()):
-                    return score
+        html = requests.get(url, timeout=20).text
+        txt = re.sub(r"\s+", " ", html)
+        # Busca patrones tipo "Spain 82-76 Italy" o "Italy 76-82 Spain"
+        patt1 = re.findall(r"(Spain|España)\s*(\d{2,3})\s*[-–]\s*(\d{2,3})\s*(" + re.escape(rival_en) + r")", txt, flags=re.I)
+        patt2 = re.findall(r"(" + re.escape(rival_en) + r")\s*(\d{2,3})\s*[-–]\s*(\d{2,3})\s*(Spain|España)", txt, flags=re.I)
+        # Priorizamos que haya números y devolvemos "X-Y" con España a la izquierda si procede
+        if patt1:
+            _, a, b, _ = patt1[0]
+            return f"{a}-{b}"
+        if patt2:
+            _, a, b, _ = patt2[0]
+            return f"{b}-{a}"
     except Exception:
         pass
-
     return None
 
+def dt_local_to_utc(dt_local):
+    return dt_local.replace(tzinfo=TZ_MADRID).astimezone(TZ_UTC)
+
+def fold_ics(text):
+    # Plegado simple a 75 octetos aprox. para DESCRIPTION largas
+    out = []
+    line = ""
+    for ch in text:
+        if len(line.encode("utf-8")) >= 73:
+            out.append(line)
+            line = " " + ch  # continuation line empieza con espacio
+        else:
+            line += ch
+    if line:
+        out.append(line)
+    return "\n".join(out)
+
 def main():
-    cal = Calendar()
     now = datetime.now(TZ_MADRID)
 
-    for date_iso, hour_str, rival, venue, hv, key in games:
-        start_local = datetime.fromisoformat(f"{date_iso}T{hour_str}:00").replace(tzinfo=TZ_MADRID)
+    lines = [
+        "BEGIN:VCALENDAR",
+        "PRODID:-//queridojavier//EuroBasket Spain 2025//ES",
+        "VERSION:2.0",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:EuroBasket 2025 - España",
+        "X-WR-TIMEZONE:Europe/Madrid",
+    ]
+
+    for date_iso, hour_str, rival, venue, hv in GAMES:
+        start_local = datetime.fromisoformat(f"{date_iso}T{hour_str}:00")
         end_local = start_local + timedelta(hours=2)
 
-        # Intentar resultado si ya terminó
-        score = None
+        # Intento de resultado si ya terminó
+        result = None
         if now > end_local:
-            # Nombrado rival en inglés/latín básico para casarlo arriba
-            rival_simple = rival.split(" ")[0].lower()
-            # FIBA/olympics suelen usar "Spain" + "Italy/Georgia/Greece/Cyprus/Bosnia"
-            map_alias = {
-                "Bosnia": "Bosnia", "Bosnia": "Bosnia", "Grecia": "Greece",
-                "Georgia": "Georgia", "Chipre": "Cyprus", "Italia": "Italy"
-            }
-            look_for = map_alias.get(rival.split()[0], rival.split()[0])
-            score = fetch_result("Spain", look_for)
+            rival_en = ALIAS.get(rival, rival).split()[0]
+            result = fetch_result(rival_en)
 
-        # Título y descripción
-        title = f"EuroBasket 2025: España vs {rival}" if hv == "Casa" else f"EuroBasket 2025: {rival} vs España"
-        if score:
-            title += f" ({score})"
+        # Título
+        if hv == "home":
+            title = f"EuroBasket 2025: España vs {rival}"
+        else:
+            title = f"EuroBasket 2025: {rival} vs España"
+        if result:
+            title += f" ({result})"
 
-        desc = f"{title}\nSede: {venue}\nGrupo C (Limassol).\nEmisión en España: RTVE."
-        # Fuente de horarios/sedes (confirmadas por FIBA/organización chipriota)
-        desc += "\nFuentes: FIBA 'Games' y calendario de Chipre (saltos 15:00/18:15/21:30 hora local)."
+        # Campos ICS
+        dtstart_utc = dt_local_to_utc(start_local).strftime("%Y%m%dT%H%M%SZ")
+        dtend_utc = dt_local_to_utc(end_local).strftime("%Y%m%dT%H%M%SZ")
+        dtstamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
-        e = Event()
-        e.name = title
-        e.location = venue
-        e.begin = start_local.astimezone(TZ_UTC)
-        e.end = end_local.astimezone(TZ_UTC)
-        e.description = desc
-        e.transparent = True  # no bloquear
+        desc = (
+            f"{title}\\nSede: {venue}\\nGrupo C (Limassol).\\n"
+            "TV en España: RTVE.\\n"
+            "Fuente horarios/sede: FIBA 'Games'."
+        )
+        desc = fold_ics(desc)
 
-        cal.events.add(e)
+        uid = f"{date_iso}-{rival.replace(' ', '').lower()}@eurobasket-spain"
+
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{dtstamp}",
+            f"DTSTART:{dtstart_utc}",
+            f"DTEND:{dtend_utc}",
+            f"SUMMARY:{title}",
+            f"LOCATION:{venue}",
+            f"DESCRIPTION:{desc}",
+            "TRANSP:TRANSPARENT",
+            "END:VEVENT",
+        ]
+
+    lines.append("END:VCALENDAR")
 
     with open(OUTFILE, "w", encoding="utf-8") as f:
-        f.writelines(cal.serialize_iter())
+        f.write("\n".join(lines))
 
 if __name__ == "__main__":
     main()
