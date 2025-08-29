@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Clonar el repositorio
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Configurar Python
       uses: actions/setup-python@v2
@@ -32,7 +32,7 @@ jobs:
         path: spain_baloncesto.ics
 
     - name: Confirmar cambios en el repositorio
-      uses: stefanzweifel/git-auto-commit-action@v4
+      uses: stefanzweifel/git-auto-commit-action@v5
       with:
         commit_message: "Actualizar calendario de partidos"
         file_pattern: 'spain_baloncesto.ics'
