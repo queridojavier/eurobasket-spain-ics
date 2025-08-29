@@ -1,0 +1,68 @@
+BEGIN:VCALENDAR
+PRODID:-//queridojavier//EuroBasket Spain 2025//ES
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:EuroBasket 2025 - España
+X-WR-TIMEZONE:Europe/Madrid
+BEGIN:VEVENT
+UID:2025-08-28-georgia@eurobasket-spain
+DTSTAMP:20250829T082440Z
+DTSTART:20250828T120000Z
+DTEND:20250828T140000Z
+SUMMARY:EuroBasket 2025: Georgia vs España
+LOCATION:Spyros Kyprianou Arena, Limassol (Chipre)
+DESCRIPTION:EuroBasket 2025: Georgia vs España\nSede: Spyros Kyprianou A
+ rena, Limassol (Chipre)\nGrupo C (Limassol).\nTV en España: RTVE.\nFuen
+ te horarios/sede: FIBA 'Games'.
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:2025-08-30-bosniayherzegovina@eurobasket-spain
+DTSTAMP:20250829T082440Z
+DTSTART:20250830T183000Z
+DTEND:20250830T203000Z
+SUMMARY:EuroBasket 2025: España vs Bosnia y Herzegovina
+LOCATION:Spyros Kyprianou Arena, Limassol (Chipre)
+DESCRIPTION:EuroBasket 2025: España vs Bosnia y Herzegovina\nSede: Spyro
+ s Kyprianou Arena, Limassol (Chipre)\nGrupo C (Limassol).\nTV en España
+ : RTVE.\nFuente horarios/sede: FIBA 'Games'.
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:2025-08-31-chipre@eurobasket-spain
+DTSTAMP:20250829T082440Z
+DTSTART:20250831T151500Z
+DTEND:20250831T171500Z
+SUMMARY:EuroBasket 2025: España vs Chipre
+LOCATION:Spyros Kyprianou Arena, Limassol (Chipre)
+DESCRIPTION:EuroBasket 2025: España vs Chipre\nSede: Spyros Kyprianou Ar
+ ena, Limassol (Chipre)\nGrupo C (Limassol).\nTV en España: RTVE.\nFuent
+ e horarios/sede: FIBA 'Games'.
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:2025-09-02-italia@eurobasket-spain
+DTSTAMP:20250829T082440Z
+DTSTART:20250902T183000Z
+DTEND:20250902T203000Z
+SUMMARY:EuroBasket 2025: Italia vs España
+LOCATION:Spyros Kyprianou Arena, Limassol (Chipre)
+DESCRIPTION:EuroBasket 2025: Italia vs España\nSede: Spyros Kyprianou Ar
+ ena, Limassol (Chipre)\nGrupo C (Limassol).\nTV en España: RTVE.\nFuent
+ e horarios/sede: FIBA 'Games'.
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:2025-09-04-grecia@eurobasket-spain
+DTSTAMP:20250829T082440Z
+DTSTART:20250904T183000Z
+DTEND:20250904T203000Z
+SUMMARY:EuroBasket 2025: España vs Grecia
+LOCATION:Spyros Kyprianou Arena, Limassol (Chipre)
+DESCRIPTION:EuroBasket 2025: España vs Grecia\nSede: Spyros Kyprianou Ar
+ ena, Limassol (Chipre)\nGrupo C (Limassol).\nTV en España: RTVE.\nFuent
+ e horarios/sede: FIBA 'Games'.
+TRANSP:TRANSPARENT
+END:VEVENT
+END:VCALENDAR
