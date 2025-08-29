@@ -25,7 +25,7 @@ jobs:
       - name: Build ICS
         run: |
           python3 --version
-          python3 calendar.py
+          python3 build_ics.py
 
       - name: Commit updated ICS
         run: |
