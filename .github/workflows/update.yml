@@ -1,0 +1,37 @@
+name: Update Spain EuroBasket ICS
+on:
+  schedule:
+    - cron: "*/30 10-22 * * *"   # cada 30 min en franja útil europea
+  workflow_dispatch: {}
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # DEBUG útil para ver qué hay en el repo cuando falla
+      - name: Show repo files
+        run: |
+          pwd
+          ls -la
+          echo "---- .github/workflows ----"
+          ls -la .github/workflows || true
+
+      - name: Build ICS
+        run: |
+          python3 --version
+          python3 calendar.py
+
+      - name: Commit updated ICS
+        run: |
+          test -f spain-eurobasket.ics
+          git config user.name "calendar-bot"
+          git config user.email "calendar-bot@users.noreply.github.com"
+          git add spain-eurobasket.ics
+          git commit -m "auto: update ICS" || echo "No changes to commit"
+          git push
